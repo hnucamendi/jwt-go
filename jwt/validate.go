@@ -9,9 +9,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
-	"os"
 	"strings"
-	"time"
 )
 
 type JWK struct {
@@ -49,29 +47,6 @@ type Token struct {
 	AccessToken string `json:"access_token"`
 	ExpiresIn   int    `json:"expires_in"`
 	TokenType   string `json:"token_type"`
-}
-
-func main() {
-	client := &http.Client{
-		Timeout: 20 * time.Second,
-	}
-
-	decodeURL := os.Getenv("DECODEURL")
-	url := os.Getenv("URL")
-	clientID := os.Getenv("CLIENT_ID")
-	clientSecret := os.Getenv("CLIENT_SECRET")
-	clientResource := os.Getenv("CLIENT_RESOURCE")
-	grantType := os.Getenv("GRANT_TYPE")
-
-	token, err := getToken(client, url, clientID, clientSecret, clientResource, grantType)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	err = validateToken(client, decodeURL, token)
-	if err != nil {
-		fmt.Println(err)
-	}
 }
 
 func getToken(client *http.Client, url, clientID, clientSecret, clientResource, grantType string) (string, error) {
