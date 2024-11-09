@@ -8,26 +8,7 @@ import (
 	"time"
 )
 
-type JWT struct {
-	TenantURL string
-	AuthToken string
-	ExpiresIn int
-}
-
-type CreateJWTConfig struct {
-	ClientID     string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
-	Audience     string `json:"audience"`
-}
-
-type JWTResponse struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn   int    `json:"expires_in"`
-	Scope       string `json:"scope"`
-	TokenType   string `json:"token_type"`
-}
-
-func (jwt *JWT) GenerateToken(client *http.Client, config *CreateJWTConfig) (string, error) {
+func (jwt *JWTClient) GenerateToken(client *http.Client) (string, error) {
 	if jwt.AuthToken != "" {
 		if time.Now().Unix() < int64(jwt.ExpiresIn) {
 			return jwt.AuthToken, nil
@@ -35,10 +16,10 @@ func (jwt *JWT) GenerateToken(client *http.Client, config *CreateJWTConfig) (str
 	}
 
 	bodyData := map[string]string{
-		"client_id":     config.ClientID,
-		"client_secret": config.ClientSecret,
-		"audience":      config.Audience,
-		"grant_type":    "client_credentials",
+		"client_id":     jwt.GenerateTokenConfig.ClientID,
+		"client_secret": jwt.GenerateTokenConfig.ClientSecret,
+		"audience":      jwt.GenerateTokenConfig.Audience,
+		"grant_type":    jwt.GenerateTokenConfig.GrantType,
 	}
 
 	body, err := json.Marshal(bodyData)

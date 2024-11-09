@@ -49,41 +49,13 @@ type Token struct {
 	TokenType   string `json:"token_type"`
 }
 
-func getToken(client *http.Client, url, clientID, clientSecret, clientResource, grantType string) (string, error) {
-	payload := fmt.Sprintf(`{"client_id": %q, "client_secret": %q, "audience": %q, "grant_type": %q }`, clientID, clientSecret, clientResource, grantType)
-
-	body := strings.NewReader(payload)
-
-	req, err := http.NewRequest("POST", url, body)
-	if err != nil {
-		return "", err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	res, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-
-	defer res.Body.Close()
-
-	var t *Token
-	err = json.NewDecoder(res.Body).Decode(&t)
-	if err != nil {
-		return "", err
-	}
-
-	return t.AccessToken, nil
-}
-
-func validateToken(client *http.Client, url, token string) error {
+func (jwt *JWTClient) ValidateToken(token string) error {
 	_, _, hMessage, dSignature, err := decodeToken(token)
 	if err != nil {
 		return err
 	}
 
-	p, err := loadPublicKeys(client, url)
+	p, err := jwt.loadPublicKeys()
 	if err != nil {
 		return err
 	}
@@ -145,13 +117,40 @@ func validateToken(client *http.Client, url, token string) error {
 	return nil
 }
 
-func loadPublicKeys(client *http.Client, url string) (*JWKs, error) {
-	req, err := http.NewRequest("GET", url, nil)
+func (jwt *JWTClient) getOpenIDConfiguration() (*OpenIDConfiguration, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/.well-known/openid-configuration", jwt.TenantURL), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := client.Do(req)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+
+	var openidConfig *OpenIDConfiguration
+	err = json.NewDecoder(res.Body).Decode(&openidConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return openidConfig, nil
+}
+
+func (jwt *JWTClient) loadPublicKeys() (*JWKs, error) {
+	config, err := jwt.getOpenIDConfiguration()
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", config.JWKSURI, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
