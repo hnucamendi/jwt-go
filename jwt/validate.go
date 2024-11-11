@@ -63,14 +63,12 @@ func (jwt *JWTClient) ValidateToken(token string) error {
 	// Convert modulus (n) and exponent (e) from Base64URL encoding
 	modulusBytes, err := base64.RawURLEncoding.DecodeString(p.Keys[0].N)
 	if err != nil {
-		fmt.Println("Error decoding modulus:", err)
-		return err
+		return fmt.Errorf("error decoding modulus: %s", err.Error())
 	}
 
 	exponentBytes, err := base64.RawURLEncoding.DecodeString(p.Keys[0].E)
 	if err != nil {
-		fmt.Println("Error decoding exponent:", err)
-		return err
+		return fmt.Errorf("error decoding exponent: %s", err.Error())
 	}
 
 	// Convert exponent bytes to an integer
@@ -80,8 +78,7 @@ func (jwt *JWTClient) ValidateToken(token string) error {
 	} else if len(exponentBytes) == 1 {
 		exponent = int(exponentBytes[0])
 	} else {
-		fmt.Println("Unsupported exponent length")
-		return err
+		return fmt.Errorf("unsupported exponent length")
 	}
 
 	// Create an rsa.PublicKey
@@ -90,11 +87,6 @@ func (jwt *JWTClient) ValidateToken(token string) error {
 		E: exponent,
 	}
 
-	// Print the public key (for verification purposes)
-	fmt.Printf("Public Key: %+v\n", pubKey)
-
-	fmt.Println(dSignature)
-
 	// Now use the public key to verify a signature or decrypt a message
 	// Example of verifying a signature
 	message := hMessage
@@ -102,18 +94,15 @@ func (jwt *JWTClient) ValidateToken(token string) error {
 
 	signature, err := base64.RawURLEncoding.DecodeString(signatureBase64)
 	if err != nil {
-		fmt.Println("Error decoding signature:", err)
-		return err
+		return fmt.Errorf("error decoding signature: %s", err.Error())
 	}
 
 	hashed := sha256.Sum256([]byte(message))
 	err = rsa.VerifyPKCS1v15(pubKey, crypto.SHA256, hashed[:], signature)
 	if err != nil {
-		fmt.Println("Verification failed:", err)
-		return err
+		return fmt.Errorf("verification failed: %s", err.Error())
 	}
 
-	fmt.Println("Signature verified successfully")
 	return nil
 }
 
