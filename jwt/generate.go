@@ -27,7 +27,7 @@ func (jwt *JWTClient) GenerateToken(client *http.Client) (string, error) {
 		return "", err
 	}
 
-	req, err := http.NewRequest("POST", jwt.TenantURL, bytes.NewBuffer(body))
+	req, err := http.NewRequest("POST", jwt.TenantURL+"/oauth/token", bytes.NewBuffer(body))
 	if err != nil {
 		return "", err
 	}
